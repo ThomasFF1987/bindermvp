@@ -292,10 +292,10 @@ POKEMON_TCG_API_KEY=...            # pokemontcg.io (optionnel mais recommandé)
 
 ### v1 — MVP
 - [x] Setup projet (Next.js + Tailwind + Clerk + Supabase)
-- [ ] Authentification (sign-in / sign-up via Clerk)
-- [ ] CRUD classeurs
-- [ ] Visualiseur de classeur avec pages
-- [ ] Recherche Pokémon TCG + ajout dans un classeur
+- [x] Authentification (sign-in / sign-up via Clerk)
+- [x] CRUD classeurs
+- [x] Visualiseur de classeur avec pages
+- [x] Recherche Pokémon TCG + ajout dans un classeur
 - [ ] Déploiement Vercel
 
 ### v2

@@ -24,3 +24,50 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.foil-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  overflow: hidden;
+}
+
+.foil-overlay::before {
+  content: '';
+  position: absolute;
+  top: -10%;
+  bottom: -10%;
+  left: 0;
+  width: 45%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 80, 200, 0.5) 22%,
+    rgba(255, 220, 80, 0.5) 38%,
+    rgba(80, 230, 160, 0.5) 50%,
+    rgba(80, 200, 255, 0.5) 62%,
+    rgba(180, 110, 255, 0.5) 78%,
+    transparent 100%
+  );
+  mix-blend-mode: screen;
+  transform: translateX(-120%) skewX(-18deg);
+  animation: foil-sweep 3.5s linear infinite;
+}
+
+@keyframes foil-sweep {
+  0%   { transform: translateX(-120%) skewX(-18deg); }
+  100% { transform: translateX(260%)  skewX(-18deg); }
+}
+
+@keyframes card-float {
+  0%   { transform: translateY(0)    rotate(1.5deg); }
+  25%  { transform: translateY(-3px) rotate(0deg); }
+  50%  { transform: translateY(0)    rotate(-1.5deg); }
+  75%  { transform: translateY(3px)  rotate(0deg); }
+  100% { transform: translateY(0)    rotate(1.5deg); }
+}
+
+.card-zoom:hover .card-float {
+  animation: card-float 4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}

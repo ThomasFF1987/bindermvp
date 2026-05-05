@@ -1,0 +1,27 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { requireUserId } from '@/lib/auth'
+import { getAdapter, SUPPORTED_GAMES } from '@/lib/adapters'
+import type { GameType } from '@/types/card'
+
+type RouteContext = { params: Promise<{ game: string; id: string }> }
+
+export async function GET(_req: NextRequest, { params }: RouteContext) {
+  try {
+    await requireUserId()
+    const { game, id } = await params
+    if (!SUPPORTED_GAMES.includes(game as GameType)) {
+      return NextResponse.json(
+        { data: null, error: { message: `Unsupported game "${game}"` } },
+        { status: 400 },
+      )
+    }
+    const card = await getAdapter(game as GameType).getById(id)
+    return NextResponse.json({ data: card, error: null })
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'Unknown error'
+    if (message === 'Unauthorized') {
+      return NextResponse.json({ data: null, error: { message } }, { status: 401 })
+    }
+    return NextResponse.json({ data: null, error: { message } }, { status: 500 })
+  }
+}

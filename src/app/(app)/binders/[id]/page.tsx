@@ -1,8 +1,181 @@
-export default async function BinderPage({
+'use client'
+
+import { use, useMemo, useState } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useBinder, useUpdateBinder } from '@/hooks/useBinders'
+import { useBinderCards, useDeleteCard, useUpdateCard } from '@/hooks/useCards'
+import { BinderPage } from '@/components/binders/BinderPage'
+import { CardDetailDialog } from '@/components/binders/CardDetailDialog'
+import type { BinderCard } from '@/types/card'
+
+export default function BinderViewerPage({
   params,
 }: {
   params: Promise<{ id: string }>
 }) {
-  const { id } = await params
-  return <main className="p-8">Binder view (placeholder) — id: {id}</main>
+  const { id } = use(params)
+  const router = useRouter()
+  const { data: binder, isLoading: binderLoading, error: binderError } = useBinder(id)
+  const { data: cards, isLoading: cardsLoading } = useBinderCards(id)
+  const deleteCard = useDeleteCard(id)
+  const updateCard = useUpdateCard(id)
+  const updateBinder = useUpdateBinder(id)
+
+  const [page, setPage] = useState(1)
+  const [detailCard, setDetailCard] = useState<BinderCard | null>(null)
+
+  const totalPages = binder?.page_count ?? 1
+  const lastPageHasCards = useMemo(
+    () => (cards ?? []).some((c) => c.page_number === totalPages),
+    [cards, totalPages],
+  )
+  const canRemovePage = totalPages > 1 && !lastPageHasCards
+
+  const cardsOnPage = useMemo<BinderCard[]>(
+    () => (cards ?? []).filter((c) => c.page_number === page),
+    [cards, page],
+  )
+
+  if (binderLoading) return <p className="p-8 text-gray-500">Chargement…</p>
+  if (binderError) return <p className="p-8 text-red-600">Erreur : {(binderError as Error).message}</p>
+  if (!binder) return <p className="p-8 text-gray-500">Classeur introuvable.</p>
+
+  return (
+    <section className="mx-auto max-w-5xl p-8">
+      <div className="mb-6">
+        <Link href="/binders" className="text-sm text-gray-500 hover:text-gray-700">
+          ← Retour
+        </Link>
+      </div>
+
+      <header className="mb-6 flex items-start gap-4">
+        <div
+          className="mt-1 h-12 w-2 rounded-full"
+          style={{ backgroundColor: binder.color }}
+          aria-hidden
+        />
+        <div className="flex-1">
+          <h1 className="text-2xl font-semibold">{binder.name}</h1>
+          {binder.description && (
+            <p className="mt-1 text-sm text-gray-600">{binder.description}</p>
+          )}
+          <p className="mt-1 text-xs text-gray-500">
+            {binder.page_format} cartes / page · {cards?.length ?? 0} carte(s)
+          </p>
+        </div>
+        <Link
+          href={`/binders/${binder.id}/edit`}
+          className="rounded border border-gray-300 px-3 py-1.5 text-sm hover:border-gray-400"
+        >
+          Modifier
+        </Link>
+      </header>
+
+      <div className="mb-4 flex items-center justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => updateBinder.mutate({ page_count: totalPages + 1 })}
+          disabled={updateBinder.isPending}
+          className="rounded border border-gray-300 px-3 py-1 text-sm hover:border-gray-400 disabled:opacity-50"
+          title="Ajouter une page"
+        >
+          + Page
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            const next = totalPages - 1
+            updateBinder.mutate(
+              { page_count: next },
+              { onSuccess: () => setPage((p) => Math.min(p, next)) },
+            )
+          }}
+          disabled={!canRemovePage || updateBinder.isPending}
+          className="rounded border border-gray-300 px-3 py-1 text-sm hover:border-gray-400 disabled:opacity-50"
+          title={
+            totalPages <= 1
+              ? 'Au moins une page requise'
+              : lastPageHasCards
+                ? 'Videz la dernière page avant de la supprimer'
+                : 'Retirer la dernière page'
+          }
+        >
+          − Page
+        </button>
+      </div>
+
+      {cardsLoading ? (
+        <p className="text-gray-500">Chargement des cartes…</p>
+      ) : (
+        <>
+          <div className="flex items-stretch gap-3">
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              onDragEnter={(e) => {
+                e.preventDefault()
+                setPage((p) => Math.max(1, p - 1))
+              }}
+              onDragOver={(e) => e.preventDefault()}
+              disabled={page <= 1}
+              className="flex w-12 shrink-0 items-center justify-center rounded border border-gray-300 text-2xl text-gray-700 transition hover:border-gray-400 hover:bg-gray-50 disabled:opacity-30"
+              title="Page précédente (déposez une carte ici pour basculer)"
+              aria-label="Page précédente"
+            >
+              ←
+            </button>
+
+            <div className="flex-1">
+              <BinderPage
+                pageFormat={binder.page_format}
+                cards={cardsOnPage}
+                onSlotClick={(slot) => {
+                  const qs = new URLSearchParams({
+                    binderId: id,
+                    page: String(page),
+                    slot: String(slot),
+                  })
+                  router.push(`/search?${qs.toString()}`)
+                }}
+                onCardClick={(card) => setDetailCard(card)}
+                onCardRemove={(card) => {
+                  if (confirm(`Retirer ${card.card_id} ?`)) deleteCard.mutate(card.id)
+                }}
+                onCardMove={(cardId, toSlot) => {
+                  updateCard.mutate({ cardId, input: { slot: toSlot, page_number: page } })
+                }}
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              onDragEnter={(e) => {
+                e.preventDefault()
+                setPage((p) => Math.min(totalPages, p + 1))
+              }}
+              onDragOver={(e) => e.preventDefault()}
+              disabled={page >= totalPages}
+              className="flex w-12 shrink-0 items-center justify-center rounded border border-gray-300 text-2xl text-gray-700 transition hover:border-gray-400 hover:bg-gray-50 disabled:opacity-30"
+              title="Page suivante (déposez une carte ici pour basculer)"
+              aria-label="Page suivante"
+            >
+              →
+            </button>
+          </div>
+
+          <div className="mt-4 text-center text-sm tabular-nums text-gray-700">
+            Page {page} / {totalPages}
+          </div>
+        </>
+      )}
+
+      <CardDetailDialog
+        binderId={id}
+        card={detailCard}
+        onClose={() => setDetailCard(null)}
+      />
+    </section>
+  )
 }

@@ -1,0 +1,5 @@
+project_id = "pfqagrstzwsgseflkaon"
+
+[auth.third_party.clerk]
+enabled = true
+domain = "factual-coyote-32.clerk.accounts.dev"
