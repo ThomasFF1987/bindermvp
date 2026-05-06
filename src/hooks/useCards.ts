@@ -53,6 +53,18 @@ export function useUpdateCard(binderId: string) {
   })
 }
 
+export function useMoveCard(binderId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ cardId, toPage, toSlot }: { cardId: string; toPage: number; toSlot: number }) =>
+      request<{ moved: string; swappedWith: string | null }>(
+        `/api/cards/${binderId}/move`,
+        { method: 'POST', body: JSON.stringify({ cardId, toPage, toSlot }) },
+      ),
+    onSuccess: () => qc.invalidateQueries({ queryKey: cardsKey(binderId) }),
+  })
+}
+
 export function useDeleteCard(binderId: string) {
   const qc = useQueryClient()
   return useMutation({

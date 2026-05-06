@@ -4,7 +4,7 @@ import { use, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useBinder, useUpdateBinder } from '@/hooks/useBinders'
-import { useBinderCards, useDeleteCard, useUpdateCard } from '@/hooks/useCards'
+import { useBinderCards, useDeleteCard, useMoveCard } from '@/hooks/useCards'
 import { BinderPage } from '@/components/binders/BinderPage'
 import { CardDetailDialog } from '@/components/binders/CardDetailDialog'
 import type { BinderCard } from '@/types/card'
@@ -19,7 +19,7 @@ export default function BinderViewerPage({
   const { data: binder, isLoading: binderLoading, error: binderError } = useBinder(id)
   const { data: cards, isLoading: cardsLoading } = useBinderCards(id)
   const deleteCard = useDeleteCard(id)
-  const updateCard = useUpdateCard(id)
+  const moveCard = useMoveCard(id)
   const updateBinder = useUpdateBinder(id)
 
   const [page, setPage] = useState(1)
@@ -72,38 +72,7 @@ export default function BinderViewerPage({
         </Link>
       </header>
 
-      <div className="mb-4 flex items-center justify-end gap-2">
-        <button
-          type="button"
-          onClick={() => updateBinder.mutate({ page_count: totalPages + 1 })}
-          disabled={updateBinder.isPending}
-          className="rounded border border-gray-300 px-3 py-1 text-sm hover:border-gray-400 disabled:opacity-50"
-          title="Ajouter une page"
-        >
-          + Page
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            const next = totalPages - 1
-            updateBinder.mutate(
-              { page_count: next },
-              { onSuccess: () => setPage((p) => Math.min(p, next)) },
-            )
-          }}
-          disabled={!canRemovePage || updateBinder.isPending}
-          className="rounded border border-gray-300 px-3 py-1 text-sm hover:border-gray-400 disabled:opacity-50"
-          title={
-            totalPages <= 1
-              ? 'Au moins une page requise'
-              : lastPageHasCards
-                ? 'Videz la dernière page avant de la supprimer'
-                : 'Retirer la dernière page'
-          }
-        >
-          − Page
-        </button>
-      </div>
+      
 
       {cardsLoading ? (
         <p className="text-gray-500">Chargement des cartes…</p>
@@ -143,7 +112,7 @@ export default function BinderViewerPage({
                   if (confirm(`Retirer ${card.card_id} ?`)) deleteCard.mutate(card.id)
                 }}
                 onCardMove={(cardId, toSlot) => {
-                  updateCard.mutate({ cardId, input: { slot: toSlot, page_number: page } })
+                  moveCard.mutate({ cardId, toPage: page, toSlot })
                 }}
               />
             </div>
@@ -164,7 +133,7 @@ export default function BinderViewerPage({
               →
             </button>
           </div>
-
+              
           <div className="mt-4 text-center text-sm tabular-nums text-gray-700">
             Page {page} / {totalPages}
           </div>

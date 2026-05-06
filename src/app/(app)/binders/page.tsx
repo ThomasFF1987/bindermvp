@@ -38,7 +38,7 @@ export default function BindersPage() {
 
               {/* Corps du classeur */}
               <div
-                className="relative aspect-[3/4] overflow-hidden rounded-r-md rounded-l-sm shadow-lg transition group-hover:-translate-y-1 group-hover:shadow-2xl"
+                className="relative aspect-3/4 overflow-hidden rounded-r-md rounded-l-sm shadow-lg transition group-hover:-translate-y-1 group-hover:shadow-2xl"
                 style={{
                   backgroundColor: b.color,
                   backgroundImage:

@@ -53,8 +53,10 @@ export function BinderPage({
           <CardSlot
             key={slot}
             card={card}
+            slot={slot}
             onClick={onCardClick}
             onRemove={onCardRemove}
+            onCardMove={onCardMove}
             draggable={Boolean(onCardMove)}
           />
         )
@@ -103,26 +105,47 @@ function EmptySlot({
 
 function CardSlot({
   card,
+  slot,
   onClick,
   onRemove,
+  onCardMove,
   draggable,
 }: {
   card: BinderCard
+  slot: number
   onClick?: (card: BinderCard) => void
   onRemove?: (card: BinderCard) => void
+  onCardMove?: (cardId: string, toSlot: number) => void
   draggable: boolean
 }) {
   const { data: external, isLoading } = useExternalCard(card.game, card.card_id)
+  const [dragOver, setDragOver] = useState(false)
 
   return (
-    <div className="card-zoom group relative aspect-[5/7] transition-transform duration-300 ease-out hover:z-10 hover:scale-[1.08]">
+    <div className="card-zoom group relative aspect-5/7 transition-transform duration-300 ease-out hover:z-10 hover:scale-[1.08]">
     <div
-      className="card-float absolute inset-0 overflow-hidden rounded-lg border border-gray-200 bg-gray-50 shadow-sm transition-shadow duration-300 hover:shadow-xl will-change-transform"
+      className={`card-float absolute inset-0 overflow-hidden rounded-lg border bg-gray-50 shadow-sm transition-shadow duration-300 hover:shadow-xl will-change-transform ${
+        dragOver ? 'border-2 border-black ring-2 ring-black/30' : 'border border-gray-200'
+      }`}
       draggable={draggable}
       onDragStart={(e) => {
         if (!draggable) return
         e.dataTransfer.setData('text/plain', card.id)
         e.dataTransfer.effectAllowed = 'move'
+      }}
+      onDragOver={(e) => {
+        if (!onCardMove) return
+        e.preventDefault()
+        setDragOver(true)
+      }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => {
+        if (!onCardMove) return
+        e.preventDefault()
+        setDragOver(false)
+        const draggedId = e.dataTransfer.getData('text/plain')
+        if (!draggedId || draggedId === card.id) return
+        onCardMove(draggedId, slot)
       }}
     >
       <button
