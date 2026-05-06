@@ -54,7 +54,8 @@ CREATE TABLE binders (
   name        VARCHAR(100) NOT NULL,
   description TEXT,
   color       VARCHAR(7) NOT NULL,     -- Couleur HEX (#RRGGBB)
-  page_format INT NOT NULL CHECK (page_format IN (4, 9, 12)), -- cartes/page
+  page_format INT NOT NULL CHECK (page_format IN (4, 8, 9, 12)), -- cartes/page
+  page_count  INT NOT NULL DEFAULT 1,  -- nombre de pages du classeur
   cover_image TEXT,                    -- URL optionnelle image de couverture
   created_at  TIMESTAMPTZ DEFAULT now(),
   updated_at  TIMESTAMPTZ DEFAULT now()
@@ -71,11 +72,12 @@ CREATE TABLE binder_cards (
   game        VARCHAR(50) NOT NULL,    -- 'pokemon', 'magic', 'dragonball', 'swu', ...
   page_number INT NOT NULL DEFAULT 1,
   slot        INT NOT NULL,            -- position dans la page (1 à page_format)
-  quantity    INT NOT NULL DEFAULT 1,
-  condition   VARCHAR(20),             -- 'mint', 'near_mint', 'excellent', 'good', 'poor'
-  is_foil     BOOLEAN DEFAULT false,
-  notes       TEXT,
-  added_at    TIMESTAMPTZ DEFAULT now(),
+  quantity      INT NOT NULL DEFAULT 1,
+  condition     VARCHAR(20),             -- 'mint', 'near_mint', 'excellent', 'good', 'poor'
+  is_foil       BOOLEAN DEFAULT false,
+  notes         TEXT,
+  selling_price NUMERIC(10,2),           -- prix de vente estimé (optionnel)
+  added_at      TIMESTAMPTZ DEFAULT now(),
   UNIQUE (binder_id, page_number, slot)
 );
 ```
@@ -117,7 +119,7 @@ CREATE POLICY "users_own_settings" ON user_settings
 
 | Jeu | API | Base URL | Auth |
 |---|---|---|---|
-| Pokémon TCG | pokemontcg.io | `https://api.pokemontcg.io/v2` | API Key (header) |
+| Pokémon TCG | TCGdex | `https://api.tcgdex.net/v2/fr` | Aucune |
 | Magic: The Gathering | Scryfall | `https://api.scryfall.com` | Aucune |
 | Dragon Ball Super | DBSCG API | `https://www.dbscg.net/api` | À confirmer |
 | Star Wars Unlimited | SWU API | À identifier | À confirmer |
@@ -126,14 +128,24 @@ CREATE POLICY "users_own_settings" ON user_settings
 Chaque API est wrappée dans un adaptateur uniforme :
 ```typescript
 interface CardAdapter {
-  search(query: string, options?: SearchOptions): Promise<CardResult[]>
-  getById(id: string): Promise<Card>
-  getImage(card: Card): string   // URL image recto
-  getSet(card: Card): string
-  getName(card: Card): string
+  game: GameType
+  search(query: string, options?: SearchOptions): Promise<CardSearchResult>
+  getById(id: string): Promise<ExternalCard>
 }
 
-interface Card {
+interface SearchOptions {
+  page?: number
+  pageSize?: number
+}
+
+interface CardSearchResult {
+  items: ExternalCard[]
+  page: number
+  pageSize: number
+  totalCount: number
+}
+
+interface ExternalCard {
   id: string
   game: GameType
   name: string
@@ -145,7 +157,6 @@ interface Card {
   rarity?: string
   types?: string[]
   artist?: string
-  rawData: unknown   // données brutes de l'API source
 }
 ```
 
@@ -199,9 +210,7 @@ interface Card {
 │       ├── Sidebar.tsx
 │       └── GameSelector.tsx
 ├── lib/
-│   ├── supabase/
-│   │   ├── client.ts               # Client Supabase (browser)
-│   │   └── server.ts               # Client Supabase (server)
+│   ├── db.ts
 │   ├── adapters/
 │   │   ├── index.ts                # Factory : getAdapter(game)
 │   │   ├── pokemon.ts              # Adaptateur PokémonTCG
@@ -233,8 +242,8 @@ interface Card {
 
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-SUPABASE_SERVICE_ROLE_KEY=eyJ...   # Côté serveur uniquement
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=eyJ...   # clé anon publique
+SUPABASE_SERVICE_ROLE_KEY=eyJ...              # côté serveur uniquement
 
 # Clerk
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_...
@@ -244,8 +253,7 @@ NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
 NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/dashboard
 NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/dashboard
 
-# APIs externes
-POKEMON_TCG_API_KEY=...            # pokemontcg.io (optionnel mais recommandé)
+# Note : aucune clé API requise pour TCGdex (Pokémon) ni Scryfall (Magic)
 ```
 
 ---
@@ -256,8 +264,9 @@ POKEMON_TCG_API_KEY=...            # pokemontcg.io (optionnel mais recommandé)
 - **Nom** : texte libre (max 100 caractères)
 - **Couleur** : color picker (couleur de la tranche/couverture)
 - **Description** : texte libre (max 500 caractères)
-- **Format de page** : 4 / 9 / 12 cartes par page
+- **Format de page** : 4 / 8 / 9 / 12 cartes par page
   - 4 cartes → grille 2×2
+  - 8 cartes → grille 4×2
   - 9 cartes → grille 3×3
   - 12 cartes → grille 4×3
 - **Image de couverture** : upload optionnel (stocké dans Supabase Storage)
@@ -295,14 +304,15 @@ POKEMON_TCG_API_KEY=...            # pokemontcg.io (optionnel mais recommandé)
 - [x] Authentification (sign-in / sign-up via Clerk)
 - [x] CRUD classeurs
 - [x] Visualiseur de classeur avec pages
-- [x] Recherche Pokémon TCG + ajout dans un classeur
+- [x] Recherche Pokémon TCG (via TCGdex) + ajout dans un classeur
+- [x] Drag & drop entre slots (implémenté en v1)
 - [ ] Déploiement Vercel
 
 ### v2
-- [ ] Support Magic: The Gathering (Scryfall)
+- [ ] Support Magic: The Gathering (Scryfall — `https://api.scryfall.com`, sans auth)
 - [ ] Support Dragon Ball Super Card Game
 - [ ] Support Star Wars Unlimited
-- [ ] Drag & drop entre slots
+- [ ] `user_settings` : préférences utilisateur (jeu par défaut, thème)
 - [ ] Export PDF d'un classeur
 - [ ] Partage de classeur (lien public)
 
@@ -358,7 +368,7 @@ npm run test
 - [Next.js App Router](https://nextjs.org/docs/app)
 - [Supabase + Next.js](https://supabase.com/docs/guides/getting-started/quickstarts/nextjs)
 - [Clerk + Next.js](https://clerk.com/docs/quickstarts/nextjs)
-- [PokémonTCG API](https://docs.pokemontcg.io/)
+- [TCGdex API (Pokémon)](https://api.tcgdex.net/v2)
 - [Scryfall API](https://scryfall.com/docs/api)
 - [TanStack Query](https://tanstack.com/query/latest)
 - [Tailwind CSS](https://tailwindcss.com/docs)

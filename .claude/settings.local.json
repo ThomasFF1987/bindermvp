@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__context7__resolve-library-id",
+      "WebFetch(domain:supabase.com)",
+      "Bash(Get-ChildItem -Path \"F:\\\\React\\\\BinderProject\\\\bindermvp\" -Recurse -Include \"*.ts\", \"*.tsx\", \"middleware.*\", \".env*\")",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Sort-Object)",
+      "mcp__context7__query-docs"
+    ]
+  }
+}
