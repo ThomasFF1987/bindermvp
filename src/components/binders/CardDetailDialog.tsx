@@ -17,9 +17,10 @@ type Props = {
   binderId: string
   card: BinderCard | null
   onClose: () => void
+  readOnly?: boolean
 }
 
-export function CardDetailDialog({ binderId, card, onClose }: Props) {
+export function CardDetailDialog({ binderId, card, onClose, readOnly = false }: Props) {
   const update = useUpdateCard(binderId)
   const del = useDeleteCard(binderId)
   const { data: external } = useExternalCard(card?.game ?? 'pokemon', card?.card_id ?? '')
@@ -79,13 +80,18 @@ export function CardDetailDialog({ binderId, card, onClose }: Props) {
             {external?.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={external.imageUrl}
+                src={external.imageUrlHiRes ?? external.imageUrl}
                 alt={external.name}
                 className="h-32 w-auto rounded object-contain"
               />
+            ) : external ? (
+              <div className="flex h-32 w-24 flex-col items-center justify-center gap-1 rounded bg-gray-100 p-2">
+                <span className="text-2xl">🃏</span>
+                <span className="text-center text-[10px] text-gray-400 leading-tight">{external.name}</span>
+              </div>
             ) : (
-              <div className="flex h-32 w-24 items-center justify-center rounded bg-gray-100 text-xs text-gray-500">
-                {card.card_id}
+              <div className="flex h-32 w-24 items-center justify-center rounded bg-gray-100">
+                <div className="h-8 w-8 rounded-full border-4 border-gray-300 border-t-blue-500 animate-spin" />
               </div>
             )}
             {isFoil && <span className="foil-overlay" aria-hidden />}
@@ -109,6 +115,37 @@ export function CardDetailDialog({ binderId, card, onClose }: Props) {
           </button>
         </header>
 
+        {readOnly ? (
+          <div className="space-y-3 text-sm">
+            <div>
+              <span className="font-medium">État : </span>
+              <span className="text-gray-700">
+                {card.condition
+                  ? CONDITIONS.find((c) => c.value === card.condition)?.label ?? card.condition
+                  : 'Non précisé'}
+              </span>
+            </div>
+            <div>
+              <span className="font-medium">Foil : </span>
+              <span className="text-gray-700">{card.is_foil ? 'Oui' : 'Non'}</span>
+            </div>
+            <div>
+              <span className="font-medium">Prix de vente : </span>
+              <span className="text-gray-700">
+                {card.selling_price != null ? `${card.selling_price.toFixed(2)} €` : '—'}
+              </span>
+            </div>
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded border border-gray-300 px-4 py-2 text-sm hover:border-gray-400"
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        ) : (
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
             <label htmlFor="condition" className="mb-1 block text-sm font-medium">
@@ -186,6 +223,7 @@ export function CardDetailDialog({ binderId, card, onClose }: Props) {
             </div>
           </div>
         </form>
+        )}
       </div>
     </div>
   )

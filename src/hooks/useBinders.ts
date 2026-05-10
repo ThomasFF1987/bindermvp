@@ -26,6 +26,7 @@ export function useBinders() {
   return useQuery({
     queryKey: bindersKey,
     queryFn: () => request<Binder[]>('/api/binders'),
+    staleTime: 5 * 60 * 1000,
   })
 }
 
@@ -34,6 +35,7 @@ export function useBinder(id: string) {
     queryKey: binderKey(id),
     queryFn: () => request<Binder>(`/api/binders/${id}`),
     enabled: Boolean(id),
+    staleTime: 5 * 60 * 1000,
   })
 }
 
@@ -54,6 +56,36 @@ export function useUpdateBinder(id: string) {
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: bindersKey })
       qc.setQueryData(binderKey(id), data)
+    },
+  })
+}
+
+export function useGenerateShareLink(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () =>
+      request<{ id: string; share_token: string }>(`/api/binders/${id}/share`, {
+        method: 'POST',
+      }),
+    onSuccess: (data) => {
+      qc.setQueryData(binderKey(id), (prev: Binder | undefined) =>
+        prev ? { ...prev, share_token: data.share_token } : prev,
+      )
+    },
+  })
+}
+
+export function useRevokeShareLink(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () =>
+      request<{ id: string; share_token: null }>(`/api/binders/${id}/share`, {
+        method: 'DELETE',
+      }),
+    onSuccess: () => {
+      qc.setQueryData(binderKey(id), (prev: Binder | undefined) =>
+        prev ? { ...prev, share_token: null } : prev,
+      )
     },
   })
 }

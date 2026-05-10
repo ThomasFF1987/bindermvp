@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { UserButton } from '@clerk/nextjs'
 import type { ReactNode } from 'react'
+import { MessagesNavLink } from '@/components/messages/MessagesNavLink'
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
@@ -16,6 +17,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <Link href="/search" className="text-sm text-gray-600 hover:text-gray-900">
             Recherche
           </Link>
+          <MessagesNavLink />
           <Link href="/settings" className="text-sm text-gray-600 hover:text-gray-900">
             Préférences
           </Link>

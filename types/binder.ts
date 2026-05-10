@@ -9,6 +9,7 @@ export type Binder = {
   page_format: PageFormat
   page_count: number
   cover_image: string | null
+  share_token: string | null
   created_at: string
   updated_at: string
 }

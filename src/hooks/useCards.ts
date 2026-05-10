@@ -26,6 +26,7 @@ export function useBinderCards(binderId: string) {
     queryKey: cardsKey(binderId),
     queryFn: () => request<BinderCard[]>(`/api/binders/${binderId}/cards`),
     enabled: Boolean(binderId),
+    staleTime: 5 * 60 * 1000,
   })
 }
 

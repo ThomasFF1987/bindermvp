@@ -7,6 +7,7 @@ import { useBinder, useUpdateBinder } from '@/hooks/useBinders'
 import { useBinderCards, useDeleteCard, useMoveCard } from '@/hooks/useCards'
 import { BinderPage } from '@/components/binders/BinderPage'
 import { CardDetailDialog } from '@/components/binders/CardDetailDialog'
+import { ShareDialog } from '@/components/binders/ShareDialog'
 import type { BinderCard } from '@/types/card'
 
 export default function BinderViewerPage({
@@ -24,6 +25,7 @@ export default function BinderViewerPage({
 
   const [page, setPage] = useState(1)
   const [detailCard, setDetailCard] = useState<BinderCard | null>(null)
+  const [shareOpen, setShareOpen] = useState(false)
 
   const totalPages = binder?.page_count ?? 1
   const lastPageHasCards = useMemo(
@@ -64,6 +66,13 @@ export default function BinderViewerPage({
             {binder.page_format} cartes / page · {cards?.length ?? 0} carte(s)
           </p>
         </div>
+        <button
+          type="button"
+          onClick={() => setShareOpen(true)}
+          className="rounded border border-gray-300 px-3 py-1.5 text-sm hover:border-gray-400"
+        >
+          {binder.share_token ? 'Lien partagé' : 'Partager'}
+        </button>
         <Link
           href={`/binders/${binder.id}/edit`}
           className="rounded border border-gray-300 px-3 py-1.5 text-sm hover:border-gray-400"
@@ -145,6 +154,14 @@ export default function BinderViewerPage({
         card={detailCard}
         onClose={() => setDetailCard(null)}
       />
+
+      {shareOpen && (
+        <ShareDialog
+          binderId={id}
+          shareToken={binder.share_token ?? null}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
     </section>
   )
 }

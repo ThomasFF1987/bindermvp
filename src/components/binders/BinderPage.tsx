@@ -27,6 +27,7 @@ type Props = {
   onCardClick?: (card: BinderCard) => void
   onCardRemove?: (card: BinderCard) => void
   onCardMove?: (cardId: string, toSlot: number) => void
+  readOnly?: boolean
 }
 
 export function BinderPage({
@@ -36,6 +37,7 @@ export function BinderPage({
   onCardClick,
   onCardRemove,
   onCardMove,
+  readOnly = false,
 }: Props) {
   const cardsBySlot = new Map<number, BinderCard>()
   for (const c of cards) cardsBySlot.set(c.slot, c)
@@ -43,10 +45,19 @@ export function BinderPage({
   const slots = Array.from({ length: pageFormat }, (_, i) => i + 1)
 
   return (
-    <div className={`grid gap-3 ${GRID_CLASS[pageFormat]}`}>
+    <div className={`grid gap-1.5 sm:gap-3 ${GRID_CLASS[pageFormat]}`}>
       {slots.map((slot) => {
         const card = cardsBySlot.get(slot)
         if (!card) {
+          if (readOnly) {
+            return (
+              <div
+                key={slot}
+                className="aspect-[5/7] rounded-lg border border-dashed border-gray-200 bg-gray-50/40"
+                aria-hidden
+              />
+            )
+          }
           return <EmptySlot key={slot} slot={slot} onSlotClick={onSlotClick} onCardMove={onCardMove} />
         }
         return (
@@ -155,22 +166,29 @@ function CardSlot({
         title={external?.name ?? card.card_id}
       >
         {external?.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={external.imageUrl}
-            alt={external.name}
-            className="h-full w-full object-contain"
-            loading="lazy"
-            draggable={false}
-          />
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={external.imageUrl}
+              alt={external.name}
+              className="h-full w-full object-contain"
+              loading="lazy"
+              draggable={false}
+              onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden') }}
+            />
+            <div className="hidden h-full w-full flex-col items-center justify-center gap-1 bg-gray-100 rounded-lg p-2">
+              <span className="text-2xl">🃏</span>
+              <span className="text-center text-[10px] text-gray-400 leading-tight">{external.name}</span>
+            </div>
+          </>
+        ) : isLoading || !external ? (
+          <div className="flex h-full w-full items-center justify-center bg-gray-100 rounded-lg">
+            <div className="h-8 w-8 rounded-full border-4 border-gray-300 border-t-blue-500 animate-spin" />
+          </div>
         ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center p-2 text-center">
-            <span className="break-all font-mono text-xs text-gray-700">
-              {external?.name ?? card.card_id}
-            </span>
-            {isLoading && (
-              <span className="mt-1 text-[10px] text-gray-400">…</span>
-            )}
+          <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-gray-100 rounded-lg p-2">
+            <span className="text-2xl">🃏</span>
+            <span className="text-center text-[10px] text-gray-400 leading-tight">{external.name}</span>
           </div>
         )}
       </button>

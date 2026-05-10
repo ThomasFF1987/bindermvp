@@ -1,6 +1,6 @@
 import type { CardSearchResult, ExternalCard, GameType } from '@/types/card'
 
-export type SearchOptions = { page?: number; pageSize?: number }
+export type SearchOptions = { page?: number; pageSize?: number; lang?: string }
 
 export interface CardAdapter {
   game: GameType

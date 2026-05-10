@@ -88,7 +88,7 @@ function SearchPageInner() {
         </div>
         <button
           type="submit"
-          disabled={!input.trim()}
+          suppressHydrationWarning
           className="rounded bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
         >
           Rechercher
@@ -121,15 +121,25 @@ function SearchPageInner() {
                 className="flex flex-col rounded-lg border border-gray-200 p-2 text-center shadow-sm"
               >
                 {c.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={c.imageUrl}
-                    alt={c.name}
-                    className="mx-auto mb-2 aspect-[5/7] w-full rounded object-contain"
-                    loading="lazy"
-                  />
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={c.imageUrl}
+                      alt={c.name}
+                      className="mx-auto mb-2 aspect-[5/7] w-full rounded object-contain"
+                      loading="lazy"
+                      onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden') }}
+                    />
+                    <div className="hidden mb-2 aspect-[5/7] w-full rounded bg-gray-100 flex flex-col items-center justify-center gap-1 p-2">
+                      <span className="text-2xl">🃏</span>
+                      <span className="text-center text-[10px] text-gray-400 leading-tight">Pas d&apos;image</span>
+                    </div>
+                  </>
                 ) : (
-                  <div className="mb-2 aspect-[5/7] w-full rounded bg-gray-100" />
+                  <div className="mb-2 aspect-[5/7] w-full rounded bg-gray-100 flex flex-col items-center justify-center gap-1 p-2">
+                    <span className="text-2xl">🃏</span>
+                    <span className="text-center text-[10px] text-gray-400 leading-tight">Pas d&apos;image</span>
+                  </div>
                 )}
                 <p className="truncate text-sm font-medium">{c.name}</p>
                 <p className="truncate text-xs text-gray-500">
