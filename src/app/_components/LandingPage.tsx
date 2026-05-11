@@ -22,13 +22,13 @@ const TRANSLATIONS = {
     badge: 'Pokémon · Magic · Dragon Ball · Etc...',
     headline1: 'Votre collection,',
     headline2: 'enfin disponible partout.',
-    sub: "Créez des classeurs et des deckboxs pour vos cartes. Retrouvez, rangez et partagez votre collection.",
+    sub: "Créez des classeurs et des deckboxes pour vos cartes. Retrouvez, rangez et partagez votre collection.",
     cta: 'Commencer votre collection →',
     featuresLabel: 'Fonctionnalités',
     features: [
-      { icon: '📂', title: 'Organisez', desc: 'Créez autant de classeurs que vous voulez et disposez vos cartes par pages de 4, 8, 9 ou 12 emplacements.' },
+      { icon: '📚', title: 'Classeurs', desc: 'Rangez vos cartes en pages de 4, 8, 9 ou 12 emplacements. Personnalisez la couleur et partagez via un lien unique.' },
+      { icon: '🗃️', title: 'Deckboxes', desc: 'Constituez des listes simples de cartes sans contrainte de page — idéal pour les decks et les want-lists.' },
       { icon: '🔍', title: 'Recherchez', desc: 'Cherchez parmi des milliers de cartes issues des plus grands jeux de cartes à collectionner.' },
-      { icon: '🔗', title: 'Partagez', desc: 'Rendez vos classeurs publics et partagez-les avec votre communauté via un lien unique.' },
     ],
     footer: 'Gestionnaire de collection de cartes',
   },
@@ -38,13 +38,13 @@ const TRANSLATIONS = {
     badge: 'Pokémon · Magic · Dragon Ball · And more...',
     headline1: 'Your collection,',
     headline2: 'finally available anywhere.',
-    sub: 'Create virtual binders and deck box for your cards. Find, sort and share your collection in a few clicks.',
+    sub: 'Create virtual binders and deckboxes for your cards. Find, sort and share your collection in a few clicks.',
     cta: 'Start your collection →',
     featuresLabel: 'Features',
     features: [
-      { icon: '📂', title: 'Organize', desc: 'Create as many binders as you want and arrange your cards in pages of 4, 8, 9 or 12 slots.' },
+      { icon: '📚', title: 'Binders', desc: 'Arrange your cards in pages of 4, 8, 9 or 12 slots. Customize the color and share via a unique link.' },
+      { icon: '🗃️', title: 'Deckboxes', desc: 'Build simple card lists with no page constraints — perfect for decks and want-lists.' },
       { icon: '🔍', title: 'Search', desc: 'Browse thousands of cards from the greatest trading card games in the world.' },
-      { icon: '🔗', title: 'Share', desc: 'Make your binders public and share them with your community via a unique link.' },
     ],
     footer: 'Trading card collection manager',
   },
@@ -53,7 +53,7 @@ const TRANSLATIONS = {
 type Lang = keyof typeof TRANSLATIONS
 
 const CARD_BACKS = [
-  { src: '/card-backs/pokemon.png',          alt: 'Pokémon card back',         delay: 0 },
+  { src: '/card-backs/pokemon.png',           alt: 'Pokémon card back',         delay: 0 },
   { src: '/card-backs/magic.png',             alt: 'Magic: The Gathering back', delay: 100 },
   { src: '/card-backs/dragonball.png',        alt: 'Dragon Ball card back',     delay: 200 },
   { src: '/card-backs/starwarsunlimited.png', alt: 'Star Wars Unlimited back',  delay: 300 },

@@ -9,8 +9,6 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 type AddCardBody = {
   card_id?: unknown
   game?: unknown
-  page_number?: unknown
-  slot?: unknown
   quantity?: unknown
   condition?: unknown
   is_foil?: unknown
@@ -22,7 +20,7 @@ function isInt(v: unknown): v is number {
   return typeof v === 'number' && Number.isInteger(v)
 }
 
-function validateAdd(body: AddCardBody, pageFormat: number) {
+function validateAdd(body: AddCardBody) {
   const errors: string[] = []
   if (typeof body.card_id !== 'string' || !body.card_id.trim()) {
     errors.push('card_id must be a non-empty string')
@@ -30,20 +28,13 @@ function validateAdd(body: AddCardBody, pageFormat: number) {
   if (typeof body.game !== 'string' || !SUPPORTED_GAMES.includes(body.game as never)) {
     errors.push(`game must be one of ${SUPPORTED_GAMES.join(', ')}`)
   }
-  if (body.page_number !== undefined && (!isInt(body.page_number) || (body.page_number as number) < 1)) {
-    errors.push('page_number must be a positive integer')
-  }
-  if (!isInt(body.slot) || (body.slot as number) < 1 || (body.slot as number) > pageFormat) {
-    errors.push(`slot must be an integer between 1 and ${pageFormat}`)
-  }
   if (body.quantity !== undefined && (!isInt(body.quantity) || (body.quantity as number) < 1)) {
     errors.push('quantity must be a positive integer')
   }
   if (
     body.condition !== undefined &&
     body.condition !== null &&
-    (typeof body.condition !== 'string' ||
-      !VALID_CONDITIONS.includes(body.condition as never))
+    (typeof body.condition !== 'string' || !VALID_CONDITIONS.includes(body.condition as never))
   ) {
     errors.push(`condition must be one of ${VALID_CONDITIONS.join(', ')} or null`)
   }
@@ -70,14 +61,13 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
     await requireUserId()
     const { id } = await params
     if (!UUID_RE.test(id)) {
-      return NextResponse.json({ data: null, error: { message: 'Invalid binder id' } }, { status: 400 })
+      return NextResponse.json({ data: null, error: { message: 'Invalid deckbox id' } }, { status: 400 })
     }
     const { data, error } = await db()
-      .from('binder_cards')
+      .from('deckbox_cards')
       .select('*')
-      .eq('binder_id', id)
-      .order('page_number', { ascending: true })
-      .order('slot', { ascending: true })
+      .eq('deckbox_id', id)
+      .order('added_at', { ascending: true })
     if (error) {
       return NextResponse.json({ data: null, error }, { status: 500 })
     }
@@ -90,27 +80,27 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
 export async function POST(req: NextRequest, { params }: RouteContext) {
   try {
     const userId = await requireUserId()
-    const { id: binderId } = await params
-    if (!UUID_RE.test(binderId)) {
-      return NextResponse.json({ data: null, error: { message: 'Invalid binder id' } }, { status: 400 })
+    const { id: deckboxId } = await params
+    if (!UUID_RE.test(deckboxId)) {
+      return NextResponse.json({ data: null, error: { message: 'Invalid deckbox id' } }, { status: 400 })
     }
 
     const supabase = db()
 
-    const { data: binder, error: binderError } = await supabase
-      .from('binders')
-      .select('id, page_format')
-      .eq('id', binderId)
+    const { data: deckbox, error: deckboxError } = await supabase
+      .from('deckboxes')
+      .select('id')
+      .eq('id', deckboxId)
       .maybeSingle()
-    if (binderError) {
-      return NextResponse.json({ data: null, error: binderError }, { status: 500 })
+    if (deckboxError) {
+      return NextResponse.json({ data: null, error: deckboxError }, { status: 500 })
     }
-    if (!binder) {
-      return NextResponse.json({ data: null, error: { message: 'Binder not found' } }, { status: 404 })
+    if (!deckbox) {
+      return NextResponse.json({ data: null, error: { message: 'Deckbox not found' } }, { status: 404 })
     }
 
     const body = (await req.json()) as AddCardBody
-    const errors = validateAdd(body, binder.page_format)
+    const errors = validateAdd(body)
     if (errors.length) {
       return NextResponse.json(
         { data: null, error: { message: 'Validation failed', details: errors } },
@@ -119,14 +109,12 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     }
 
     const { data, error } = await supabase
-      .from('binder_cards')
+      .from('deckbox_cards')
       .insert({
-        binder_id: binderId,
+        deckbox_id: deckboxId,
         user_id: userId,
         card_id: (body.card_id as string).trim(),
         game: body.game as string,
-        page_number: (body.page_number as number | undefined) ?? 1,
-        slot: body.slot as number,
         quantity: (body.quantity as number | undefined) ?? 1,
         condition: (body.condition as string | null | undefined) ?? null,
         is_foil: (body.is_foil as boolean | undefined) ?? false,
@@ -136,8 +124,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       .select()
       .single()
     if (error) {
-      const status = error.code === '23505' ? 409 : 500
-      return NextResponse.json({ data: null, error }, { status })
+      return NextResponse.json({ data: null, error }, { status: 500 })
     }
     return NextResponse.json({ data, error: null }, { status: 201 })
   } catch (e) {

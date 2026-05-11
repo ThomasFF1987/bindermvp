@@ -1,30 +1,56 @@
+'use client'
+
 import Link from 'next/link'
 import { UserButton } from '@clerk/nextjs'
 import type { ReactNode } from 'react'
 import { MessagesNavLink } from '@/components/messages/MessagesNavLink'
+import { useTheme } from '@/context/ThemeContext'
 
 export default function AppLayout({ children }: { children: ReactNode }) {
+  const { accent } = useTheme()
+
   return (
     <div className="flex flex-1 flex-col">
-      <header className="flex items-center justify-between border-b border-gray-200 px-6 py-3">
+      <header
+        className="sticky top-0 z-50 flex items-center justify-between px-6"
+        style={{
+          height: '60px',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          background: 'var(--bg-header)',
+          borderBottom: '1px solid var(--border)',
+        }}
+      >
         <nav className="flex items-center gap-6">
-          <Link href="/dashboard" className="font-semibold">
-            Binder
+          <Link
+            href="/dashboard"
+            className="text-lg font-extrabold tracking-tight"
+            style={{ color: accent, transition: 'color 0.3s ease' }}
+          >
+            BINDER
           </Link>
-          <Link href="/binders" className="text-sm text-gray-600 hover:text-gray-900">
-            Classeurs
-          </Link>
-          <Link href="/search" className="text-sm text-gray-600 hover:text-gray-900">
-            Recherche
-          </Link>
+          <NavLink href="/collection">Ma collection</NavLink>
+          <NavLink href="/search">Recherche</NavLink>
           <MessagesNavLink />
-          <Link href="/settings" className="text-sm text-gray-600 hover:text-gray-900">
-            Préférences
-          </Link>
+          <NavLink href="/settings">Préférences</NavLink>
         </nav>
         <UserButton />
       </header>
       <main className="flex-1">{children}</main>
     </div>
+  )
+}
+
+function NavLink({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className="text-sm transition-colors"
+      style={{ color: 'var(--text-secondary)' }}
+      onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
+      onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
+    >
+      {children}
+    </Link>
   )
 }

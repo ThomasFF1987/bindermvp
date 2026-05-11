@@ -1,9 +1,11 @@
 import type { GameType } from '@/types/card'
 import type { CardAdapter } from './types'
 import { pokemonAdapter } from './pokemon'
+import { finalFantasyAdapter } from './finalfantasy'
 
 const adapters: Partial<Record<GameType, CardAdapter>> = {
   pokemon: pokemonAdapter,
+  finalfantasy: finalFantasyAdapter,
 }
 
 export function getAdapter(game: GameType): CardAdapter {

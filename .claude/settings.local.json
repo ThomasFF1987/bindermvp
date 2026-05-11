@@ -8,7 +8,10 @@
       "Bash(Sort-Object)",
       "mcp__context7__query-docs",
       "Bash(Get-ChildItem -Path \"F:\\\\React\\\\BinderProject\\\\bindermvp\\\\src\" -Recurse -Directory)",
-      "Bash(Select-Object -First 20)"
+      "Bash(Select-Object -First 20)",
+      "WebFetch(domain:kupodb.com)",
+      "WebSearch",
+      "WebFetch(domain:web.archive.org)"
     ]
   }
 }

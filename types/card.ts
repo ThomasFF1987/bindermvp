@@ -1,4 +1,4 @@
-export type GameType = 'pokemon' | 'magic' | 'dragonball' | 'swu'
+export type GameType = 'pokemon' | 'magic' | 'dragonball' | 'swu' | 'finalfantasy'
 
 export type CardCondition = 'mint' | 'near_mint' | 'excellent' | 'good' | 'poor'
 

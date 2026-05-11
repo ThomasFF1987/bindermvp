@@ -5,9 +5,11 @@ import { useSearchParams } from 'next/navigation'
 import { useCardSearch } from '@/hooks/useCardSearch'
 import type { ExternalCard, GameType } from '@/types/card'
 import { AddToBinderDialog } from '@/components/binders/AddToBinderDialog'
+import { AddToDeckboxDialog } from '@/components/deckboxes/AddToDeckboxDialog'
 
 const GAMES: { value: GameType; label: string; disabled?: boolean }[] = [
   { value: 'pokemon', label: 'Pokémon' },
+  { value: 'finalfantasy', label: 'Final Fantasy TCG' },
   { value: 'magic', label: 'Magic', disabled: true },
   { value: 'dragonball', label: 'Dragon Ball', disabled: true },
   { value: 'swu', label: 'Star Wars Unlimited', disabled: true },
@@ -27,8 +29,10 @@ function SearchPageInner() {
   const [submitted, setSubmitted] = useState('')
   const [page, setPage] = useState(1)
   const [adding, setAdding] = useState<ExternalCard | null>(null)
+  const [addingToDeckbox, setAddingToDeckbox] = useState<ExternalCard | null>(null)
   const searchParams = useSearchParams()
   const presetBinderId = searchParams.get('binderId') ?? undefined
+  const presetDeckboxId = searchParams.get('deckboxId') ?? undefined
   const presetPage = searchParams.get('page') ? parseInt(searchParams.get('page')!, 10) : undefined
   const presetSlot = searchParams.get('slot') ? parseInt(searchParams.get('slot')!, 10) : undefined
 
@@ -148,12 +152,21 @@ function SearchPageInner() {
                 {c.rarity && (
                   <p className="truncate text-[10px] uppercase text-gray-400">{c.rarity}</p>
                 )}
+                {!presetDeckboxId && (
+                  <button
+                    type="button"
+                    onClick={() => setAdding(c)}
+                    className="mt-2 rounded bg-black px-2 py-1 text-xs font-medium text-white hover:bg-gray-800"
+                  >
+                    + Classeur
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={() => setAdding(c)}
-                  className="mt-2 rounded bg-black px-2 py-1 text-xs font-medium text-white hover:bg-gray-800"
+                  onClick={() => setAddingToDeckbox(c)}
+                  className={`${presetDeckboxId ? 'mt-2' : 'mt-1'} rounded ${presetDeckboxId ? 'bg-black text-white hover:bg-gray-800' : 'border border-gray-300 text-gray-700 hover:border-gray-400'} px-2 py-1 text-xs font-medium`}
                 >
-                  + Ajouter au classeur
+                  + Deckbox
                 </button>
               </li>
             ))}
@@ -189,6 +202,11 @@ function SearchPageInner() {
         initialBinderId={presetBinderId}
         initialPage={presetPage}
         initialSlot={presetSlot}
+      />
+      <AddToDeckboxDialog
+        card={addingToDeckbox}
+        onClose={() => setAddingToDeckbox(null)}
+        initialDeckboxId={presetDeckboxId}
       />
     </section>
   )

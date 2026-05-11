@@ -1,28 +1,34 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ── Base commune à tous les thèmes ────────────────────────────── */
+:root {
+  --bg-page:    #080808;
+  --bg-surface: #161616;
+  --bg-header:  rgba(8,8,8,0.75);
+  --border:     rgba(255,255,255,0.08);
+  --text-primary:   #e8e4dc;
+  --text-secondary: rgba(232,228,220,0.5);
+  --text-muted:     rgba(232,228,220,0.25);
+  --accent: #4A9FD4; /* bleu par défaut */
 }
 
+/* ── Accents par thème ──────────────────────────────────────────── */
+[data-theme="blanc"] { --accent: #EDD85D; }
+[data-theme="bleu"]  { --accent: #4A9FD4; }
+[data-theme="noir"]  { --accent: #A899CC; }
+[data-theme="rouge"] { --accent: #E04444; }
+[data-theme="vert"]  { --accent: #3AA864; }
+
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--bg-page);
+  color: var(--text-primary);
   font-family: Arial, Helvetica, sans-serif;
+  transition: background 0.2s, color 0.2s;
 }
 
 /* Clerk modal — centrage vertical */

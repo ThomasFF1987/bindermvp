@@ -30,6 +30,14 @@ export default function RootLayout({
         lang="fr"
         className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       >
+        <head>
+          {/* Script inline pour éviter le flash au chargement */}
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `(function(){try{var t=localStorage.getItem('theme');var valid=['blanc','bleu','noir','rouge','vert'];if(t&&valid.indexOf(t)!==-1)document.documentElement.setAttribute('data-theme',t)}catch(e){}})()`,
+            }}
+          />
+        </head>
         <body className="min-h-full flex flex-col">
           <Providers>{children}</Providers>
         </body>
