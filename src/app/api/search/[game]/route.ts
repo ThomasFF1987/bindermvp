@@ -28,7 +28,12 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     const adapter = getAdapter(game as GameType)
     const LANGS = ['en', 'fr', 'de', 'es', 'it', 'pt', 'ja', 'ko', 'zh-TW', 'zh-CN']
     const results = await Promise.all(
-      LANGS.map((lang) => adapter.search(q, { page, pageSize, lang }).catch(() => null))
+      LANGS.map((lang) =>
+        adapter.search(q, { page, pageSize, lang }).catch((err) => {
+          console.error(`[search] ${game} lang=${lang} failed:`, err instanceof Error ? err.message : err)
+          return null
+        }),
+      ),
     )
 
     const best = new Map<string, ExternalCard>()
