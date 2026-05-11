@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { requireUserId } from '@/lib/auth'
 import { db } from '@/lib/db'
 
-export async function GET(_req: NextRequest) {
+export async function GET() {
   try {
     const me = await requireUserId()
     const { count, error } = await db()

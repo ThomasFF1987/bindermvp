@@ -38,7 +38,8 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
       owner = { name: 'Anonyme' }
     }
 
-    const { user_id: _user_id, ...binderPublic } = binder
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { user_id, ...binderPublic } = binder
     return NextResponse.json(
       { data: { binder: binderPublic, cards: cards ?? [], owner }, error: null },
       { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' } },

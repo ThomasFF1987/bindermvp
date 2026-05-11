@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type MouseEvent } from 'react'
+import Image from 'next/image'
 import { useClerk } from '@clerk/nextjs'
 
 const THEMES = [
@@ -18,14 +19,14 @@ const TRANSLATIONS = {
   fr: {
     signIn: 'Se connecter',
     signUp: 'Créer un compte',
-    badge: 'Pokémon · Magic · Dragon Ball',
+    badge: 'Pokémon · Magic · Dragon Ball · Etc...',
     headline1: 'Votre collection,',
-    headline2: 'enfin organisée.',
-    sub: "Créez des classeurs virtuels pour vos cartes Pokémon, Magic, Dragon Ball et bien d'autres. Retrouvez, rangez et partagez votre collection.",
-    cta: 'Commencer ma collection →',
+    headline2: 'enfin disponible partout.',
+    sub: "Créez des classeurs et des deckboxs pour vos cartes. Retrouvez, rangez et partagez votre collection.",
+    cta: 'Commencer votre collection →',
     featuresLabel: 'Fonctionnalités',
     features: [
-      { icon: '📂', title: 'Organisez', desc: 'Créez autant de classeurs que vous voulez et disposez vos cartes par pages de 4, 9 ou 12 emplacements.' },
+      { icon: '📂', title: 'Organisez', desc: 'Créez autant de classeurs que vous voulez et disposez vos cartes par pages de 4, 8, 9 ou 12 emplacements.' },
       { icon: '🔍', title: 'Recherchez', desc: 'Cherchez parmi des milliers de cartes issues des plus grands jeux de cartes à collectionner.' },
       { icon: '🔗', title: 'Partagez', desc: 'Rendez vos classeurs publics et partagez-les avec votre communauté via un lien unique.' },
     ],
@@ -34,14 +35,14 @@ const TRANSLATIONS = {
   en: {
     signIn: 'Sign in',
     signUp: 'Create account',
-    badge: 'Pokémon · Magic · Dragon Ball',
+    badge: 'Pokémon · Magic · Dragon Ball · And more...',
     headline1: 'Your collection,',
-    headline2: 'finally organized.',
-    sub: 'Create virtual binders for your Pokémon, Magic, Dragon Ball and many more cards. Find, sort and share your collection in a few clicks.',
-    cta: 'Start my collection →',
+    headline2: 'finally available anywhere.',
+    sub: 'Create virtual binders and deck box for your cards. Find, sort and share your collection in a few clicks.',
+    cta: 'Start your collection →',
     featuresLabel: 'Features',
     features: [
-      { icon: '📂', title: 'Organize', desc: 'Create as many binders as you want and arrange your cards in pages of 4, 9 or 12 slots.' },
+      { icon: '📂', title: 'Organize', desc: 'Create as many binders as you want and arrange your cards in pages of 4, 8, 9 or 12 slots.' },
       { icon: '🔍', title: 'Search', desc: 'Browse thousands of cards from the greatest trading card games in the world.' },
       { icon: '🔗', title: 'Share', desc: 'Make your binders public and share them with your community via a unique link.' },
     ],
@@ -52,32 +53,12 @@ const TRANSLATIONS = {
 type Lang = keyof typeof TRANSLATIONS
 
 const CARD_BACKS = [
-  {
-    filled: true,
-    gradient: 'linear-gradient(150deg, #7b0000 0%, #cc0000 35%, #ff6666 55%, #f5f5f5 68%, #cc0000 85%, #7b0000 100%)',
-    innerBorder: 'inset 0 0 0 2px rgba(255,255,255,0.15)',
-    delay: 0,
-  },
-  {
-    filled: true,
-    gradient: 'linear-gradient(150deg, #0d1f33 0%, #1a3a5c 30%, #2e6da4 55%, #9b7a1e 78%, #5c3d0a 100%)',
-    innerBorder: 'inset 0 0 0 2px rgba(255,255,255,0.1)',
-    delay: 100,
-  },
-  {
-    filled: true,
-    gradient: 'linear-gradient(150deg, #7a2800 0%, #c94b00 30%, #f9a825 55%, #ffd740 70%, #c94b00 90%, #7a2800 100%)',
-    innerBorder: 'inset 0 0 0 2px rgba(255,200,0,0.2)',
-    delay: 200,
-  },
-  {
-    filled: true,
-    gradient: 'linear-gradient(150deg, #040f24 0%, #0d2b5e 30%, #1565c0 55%, #1e88e5 70%, #0d2b5e 90%, #040f24 100%)',
-    innerBorder: 'inset 0 0 0 2px rgba(100,180,255,0.15)',
-    delay: 300,
-  },
-  { filled: false, gradient: '', innerBorder: '', delay: 0 },
-  { filled: false, gradient: '', innerBorder: '', delay: 0 },
+  { src: '/card-backs/pokemon.png',          alt: 'Pokémon card back',         delay: 0 },
+  { src: '/card-backs/magic.png',             alt: 'Magic: The Gathering back', delay: 100 },
+  { src: '/card-backs/dragonball.png',        alt: 'Dragon Ball card back',     delay: 200 },
+  { src: '/card-backs/starwarsunlimited.png', alt: 'Star Wars Unlimited back',  delay: 300 },
+  { src: '/card-backs/fftcg.png',             alt: 'Final Fantasy TCG back',    delay: 400 },
+  { src: '/card-backs/onepiece.png',          alt: 'One Piece Card Game back',  delay: 500 },
 ]
 
 function BinderPreview({ theme, tilt }: { theme: Theme; tilt: { x: number; y: number } }) {
@@ -164,46 +145,38 @@ function BinderPreview({ theme, tilt }: { theme: Theme; tilt: { x: number; y: nu
               background: 'linear-gradient(160deg, rgba(255,255,255,0.03) 0%, transparent 60%)',
             }}
           >
-            {CARD_BACKS.map((card, i) =>
-              card.filled ? (
+            {CARD_BACKS.map((card) => (
+              <div
+                key={card.src}
+                style={{
+                  width: '80px',
+                  height: '120px',
+                  borderRadius: '7px',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  animation: 'card-appear 0.6s cubic-bezier(0.22, 1, 0.36, 1) both',
+                  animationDelay: `${card.delay}ms`,
+                  boxShadow: '0 8px 20px rgba(0,0,0,0.6)',
+                }}
+              >
+                <Image
+                  src={card.src}
+                  alt={card.alt}
+                  fill
+                  style={{ objectFit: 'cover' }}
+                  draggable={false}
+                />
                 <div
-                  key={i}
                   style={{
-                    width: '80px',
-                    height: '120px',
-                    borderRadius: '7px',
-                    background: card.gradient,
-                    position: 'relative',
-                    overflow: 'hidden',
-                    animation: 'card-appear 0.6s cubic-bezier(0.22, 1, 0.36, 1) both',
-                    animationDelay: `${card.delay}ms`,
-                    boxShadow: `0 8px 20px rgba(0,0,0,0.6), ${card.innerBorder}`,
-                  }}
-                >
-                  <div className="foil-overlay" />
-                  <div
-                    style={{
-                      position: 'absolute',
-                      inset: '5px',
-                      borderRadius: '4px',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      pointerEvents: 'none',
-                    }}
-                  />
-                </div>
-              ) : (
-                <div
-                  key={i}
-                  style={{
-                    width: '80px',
-                    height: '120px',
-                    borderRadius: '7px',
-                    border: '1px dashed rgba(255,255,255,0.1)',
-                    background: 'rgba(255,255,255,0.015)',
+                    position: 'absolute',
+                    inset: '5px',
+                    borderRadius: '4px',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    pointerEvents: 'none',
                   }}
                 />
-              )
-            )}
+              </div>
+            ))}
           </div>
         </div>
 
@@ -238,7 +211,7 @@ export default function LandingPage() {
   const [lang, setLang] = useState<Lang>('fr')
   const tr = TRANSLATIONS[lang]
 
-  function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
+  function handleMouseMove(e: MouseEvent<HTMLDivElement>) {
     const cx = window.innerWidth / 2
     const cy = window.innerHeight / 2
     const dx = (e.clientX - cx) / (window.innerWidth / 2)
@@ -249,7 +222,7 @@ export default function LandingPage() {
   return (
     <div
       className="min-h-screen flex flex-col"
-      style={{ background: '#080808', color: '#e8e4dc', position: 'relative', overflow: 'hidden' }}
+      style={{ background: '#080808', color: '#e8e4dc', position: 'relative', overflow: 'hidden', userSelect: 'none' }}
       onMouseMove={handleMouseMove}
     >
       {/* Grain texture overlay */}

@@ -3,7 +3,7 @@
 import { use, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useBinder, useUpdateBinder } from '@/hooks/useBinders'
+import { useBinder } from '@/hooks/useBinders'
 import { useBinderCards, useDeleteCard, useMoveCard } from '@/hooks/useCards'
 import { BinderPage } from '@/components/binders/BinderPage'
 import { CardDetailDialog } from '@/components/binders/CardDetailDialog'
@@ -21,18 +21,11 @@ export default function BinderViewerPage({
   const { data: cards, isLoading: cardsLoading } = useBinderCards(id)
   const deleteCard = useDeleteCard(id)
   const moveCard = useMoveCard(id)
-  const updateBinder = useUpdateBinder(id)
-
   const [page, setPage] = useState(1)
   const [detailCard, setDetailCard] = useState<BinderCard | null>(null)
   const [shareOpen, setShareOpen] = useState(false)
 
   const totalPages = binder?.page_count ?? 1
-  const lastPageHasCards = useMemo(
-    () => (cards ?? []).some((c) => c.page_number === totalPages),
-    [cards, totalPages],
-  )
-  const canRemovePage = totalPages > 1 && !lastPageHasCards
 
   const cardsOnPage = useMemo<BinderCard[]>(
     () => (cards ?? []).filter((c) => c.page_number === page),

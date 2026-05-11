@@ -35,7 +35,7 @@ export default function SharedBinderPage({
   const [detailCard, setDetailCard] = useState<BinderCard | null>(null)
 
   const binder = data?.binder
-  const cards = data?.cards ?? []
+  const cards = useMemo(() => data?.cards ?? [], [data?.cards])
   const owner = data?.owner ?? null
   const totalPages = binder?.page_count ?? 1
 

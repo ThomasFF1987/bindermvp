@@ -12,7 +12,7 @@ import {
   useEmptyTrash,
 } from '@/hooks/useMessages'
 import { ComposeMessageDialog } from '@/components/messages/ComposeMessageDialog'
-import type { Message, MessageFolder } from '@/types/message'
+import type { MessageFolder } from '@/types/message'
 
 const FOLDER_LABELS: Record<MessageFolder, string> = {
   inbox: 'Reçus',
