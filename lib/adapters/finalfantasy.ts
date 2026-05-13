@@ -1,5 +1,5 @@
 import type { CardSearchResult, ExternalCard } from '@/types/card'
-import type { CardAdapter, SearchOptions } from './types'
+import type { CardAdapter, CardSet, SearchOptions } from './types'
 
 const BASE = 'https://api.kupodb.com'
 
@@ -27,6 +27,10 @@ interface KupoSearchResponse {
   total_cards: number
 }
 
+interface KupoSetsResponse {
+  data: { code: string; name: string; released_at?: string }[]
+}
+
 function toExternalCard(c: KupoCard): ExternalCard {
   return {
     id: c.id,
@@ -40,11 +44,19 @@ function toExternalCard(c: KupoCard): ExternalCard {
     rarity: c.rarity,
     types: c.elements,
     artist: c.attributions?.find((a) => a.role === 'artist')?.name,
+    lang: 'en',
   }
 }
 
 export const finalFantasyAdapter: CardAdapter = {
   game: 'finalfantasy',
+
+  async getSets(_lang?: string): Promise<CardSet[]> {
+    const res = await fetch(`${BASE}/tcg/sets`, { headers: FETCH_HEADERS })
+    if (!res.ok) throw new Error(`KupoDB sets failed: ${res.status}`)
+    const json = (await res.json()) as KupoSetsResponse
+    return json.data.map((s) => ({ code: s.code, name: s.name, releaseDate: s.released_at }))
+  },
 
   async search(query: string, options?: SearchOptions): Promise<CardSearchResult> {
     if (options?.lang && options.lang !== 'en') {
@@ -52,7 +64,10 @@ export const finalFantasyAdapter: CardAdapter = {
     }
     const page = options?.page ?? 1
     const pageSize = options?.pageSize ?? 20
-    const params = new URLSearchParams({ q: query, page: String(page), page_size: String(pageSize) })
+    const qParts: string[] = []
+    if (query.trim()) qParts.push(query.trim())
+    if (options?.setCode) qParts.push(`set:${options.setCode}`)
+    const params = new URLSearchParams({ q: qParts.join(' '), page: String(page), page_size: String(pageSize) })
     const res = await fetch(`${BASE}/tcg/cards/search?${params}`, { headers: FETCH_HEADERS })
     if (!res.ok) {
       const body = await res.text().catch(() => '')

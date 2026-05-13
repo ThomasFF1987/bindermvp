@@ -44,6 +44,7 @@ export type ExternalCard = {
   rarity?: string
   types?: string[]
   artist?: string
+  lang?: string
 }
 
 export type CardSearchResult = {

@@ -1,5 +1,5 @@
 import type { ExternalCard } from '@/types/card'
-import type { CardAdapter, SearchOptions } from './types'
+import type { CardAdapter, CardSet, SearchOptions } from './types'
 
 const baseUrl = (lang = 'en') => `https://api.tcgdex.net/v2/${lang}`
 
@@ -27,7 +27,7 @@ function deriveSetCode(card: SlimCard): string {
   return card.id.slice(0, card.id.lastIndexOf('-'))
 }
 
-function toExternalSlim(card: SlimCard): ExternalCard {
+function toExternalSlim(card: SlimCard, lang: string): ExternalCard {
   const setCode = deriveSetCode(card)
   return {
     id: card.id,
@@ -38,10 +38,11 @@ function toExternalSlim(card: SlimCard): ExternalCard {
     number: card.localId,
     imageUrl: imageUrl(card.image, 'low') ?? '',
     imageUrlHiRes: imageUrl(card.image, 'high'),
+    lang,
   }
 }
 
-function toExternalFull(card: FullCard): ExternalCard {
+function toExternalFull(card: FullCard, lang: string): ExternalCard {
   const setCode = card.set?.id ?? deriveSetCode(card)
   return {
     id: card.id,
@@ -55,6 +56,7 @@ function toExternalFull(card: FullCard): ExternalCard {
     rarity: card.rarity,
     types: card.types,
     artist: card.illustrator,
+    lang,
   }
 }
 
@@ -82,33 +84,66 @@ async function fetchPokemonTcgImage(
 export const pokemonAdapter: CardAdapter = {
   game: 'pokemon',
 
+  async getSets(lang = 'en'): Promise<CardSet[]> {
+    type TcgdexSet = { id: string; name: string; releaseDate?: string }
+    const res = await fetch(`${baseUrl(lang)}/sets`, {
+      headers: { Accept: 'application/json' },
+      next: { revalidate: 86400 },
+    })
+    if (!res.ok) throw new Error(`TCGdex sets error: ${res.status}`)
+    const sets = (await res.json()) as TcgdexSet[]
+    return sets.map((s) => ({ code: s.id, name: s.name, releaseDate: s.releaseDate }))
+  },
+
   async search(query, options: SearchOptions = {}) {
     const page = options.page ?? 1
     const pageSize = options.pageSize ?? 20
     const lang = options.lang ?? 'en'
-    const params = new URLSearchParams()
-    const trimmed = query.trim()
-    if (trimmed) params.set('name', trimmed)
-    params.set('pagination:page', String(page))
-    params.set('pagination:itemsPerPage', String(pageSize))
+    const setCode = options.setCode
 
-    const res = await fetch(`${baseUrl(lang)}/cards?${params.toString()}`, {
-      headers: { Accept: 'application/json' },
-      next: { revalidate: 3600 },
-    })
-    if (!res.ok) {
-      throw new Error(`TCGdex API error: ${res.status} ${res.statusText}`)
+    const trimmed = query.trim()
+
+    let items: SlimCard[]
+    let totalCount: number
+
+    // Sans nom + set sélectionné : l'endpoint /cards ne filtre pas par set.id seul.
+    // On récupère le set entier (qui contient son tableau "cards") et on pagine en mémoire.
+    if (!trimmed && setCode) {
+      const setRes = await fetch(`${baseUrl(lang)}/sets/${encodeURIComponent(setCode)}`, {
+        headers: { Accept: 'application/json' },
+        next: { revalidate: 3600 },
+      })
+      if (!setRes.ok) {
+        throw new Error(`TCGdex set error: ${setRes.status} ${setRes.statusText}`)
+      }
+      const setData = (await setRes.json()) as { cards?: SlimCard[] }
+      const allCards = setData.cards ?? []
+      totalCount = allCards.length
+      items = allCards.slice((page - 1) * pageSize, page * pageSize)
+    } else {
+      const params = new URLSearchParams()
+      if (trimmed) params.set('name', trimmed)
+      if (setCode) params.set('set.id', setCode)
+      params.set('pagination:page', String(page))
+      params.set('pagination:itemsPerPage', String(pageSize))
+      const res = await fetch(`${baseUrl(lang)}/cards?${params}`, {
+        headers: { Accept: 'application/json' },
+        next: { revalidate: 3600 },
+      })
+      if (!res.ok) {
+        throw new Error(`TCGdex API error: ${res.status} ${res.statusText}`)
+      }
+      items = (await res.json()) as SlimCard[]
+      const headerTotal =
+        res.headers.get('pagination-count') ??
+        res.headers.get('pagination-totalcount') ??
+        res.headers.get('count')
+      totalCount = headerTotal
+        ? parseInt(headerTotal, 10)
+        : items.length < pageSize
+          ? (page - 1) * pageSize + items.length
+          : page * pageSize + 1
     }
-    const items = (await res.json()) as SlimCard[]
-    const headerTotal =
-      res.headers.get('pagination-count') ??
-      res.headers.get('pagination-totalcount') ??
-      res.headers.get('count')
-    const totalCount = headerTotal
-      ? parseInt(headerTotal, 10)
-      : items.length < pageSize
-        ? (page - 1) * pageSize + items.length
-        : page * pageSize + 1
 
     // Pour l'endpoint EN: TCGdex slim est parfois incomplet. On fetch le full
     // card pour chaque résultat (comme le fait getById, qui marche dans le binder).
@@ -123,7 +158,7 @@ export const pokemonAdapter: CardAdapter = {
               )
               if (r.ok) {
                 const full = (await r.json()) as FullCard
-                const card = toExternalFull(full)
+                const card = toExternalFull(full, lang)
                 if (!card.imageUrl) {
                   const fallback = await fetchPokemonTcgImage(card.name, card.number)
                   if (fallback) {
@@ -134,10 +169,10 @@ export const pokemonAdapter: CardAdapter = {
                 return card
               }
             } catch {}
-            return toExternalSlim(slim)
+            return toExternalSlim(slim, lang)
           }),
         )
-      : items.map(toExternalSlim)
+      : items.map((s) => toExternalSlim(s, lang))
 
     return {
       items: items_final,
@@ -156,7 +191,7 @@ export const pokemonAdapter: CardAdapter = {
       throw new Error(`TCGdex API error: ${res.status} ${res.statusText}`)
     }
     const card = (await res.json()) as FullCard
-    const result = toExternalFull(card)
+    const result = toExternalFull(card, 'en')
 
     if (!card.image) {
       const fallback = await fetchPokemonTcgImage(card.name, card.localId)

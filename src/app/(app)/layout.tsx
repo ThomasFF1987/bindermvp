@@ -1,13 +1,26 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { UserButton } from '@clerk/nextjs'
 import type { ReactNode } from 'react'
 import { MessagesNavLink } from '@/components/messages/MessagesNavLink'
 import { useTheme } from '@/context/ThemeContext'
+import { SearchLangProvider, useSearchLang } from '@/context/SearchLangContext'
 
 export default function AppLayout({ children }: { children: ReactNode }) {
+  return (
+    <SearchLangProvider>
+      <AppLayoutInner>{children}</AppLayoutInner>
+    </SearchLangProvider>
+  )
+}
+
+function AppLayoutInner({ children }: { children: ReactNode }) {
   const { accent } = useTheme()
+  const pathname = usePathname()
+  const { lang, setLang } = useSearchLang()
+  const onSearch = pathname === '/search'
 
   return (
     <div className="flex flex-1 flex-col">
@@ -34,7 +47,27 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <MessagesNavLink />
           <NavLink href="/settings">Préférences</NavLink>
         </nav>
-        <UserButton />
+        <div className="flex items-center gap-3">
+          {onSearch && (
+            <div className="flex overflow-hidden rounded border" style={{ borderColor: 'var(--border)' }}>
+              {(['fr', 'en'] as const).map((l) => (
+                <button
+                  key={l}
+                  type="button"
+                  onClick={() => setLang(l)}
+                  className="px-3 py-1 text-xs font-semibold transition-colors"
+                  style={{
+                    background: lang === l ? accent : 'transparent',
+                    color: lang === l ? '#fff' : 'var(--text-secondary)',
+                  }}
+                >
+                  {l.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          )}
+          <UserButton />
+        </div>
       </header>
       <main className="flex-1">{children}</main>
     </div>
